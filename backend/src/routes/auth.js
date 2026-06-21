@@ -1,17 +1,10 @@
 const express = require('express');
+const { signup, login, logout } = require('../controllers/authController');
+
 const router = express.Router();
 
-// Placeholder
-router.post('/signup', (req, res) => {
-  res.json({ message: 'Signup endpoint (TODO)' });
-});
-
-router.post('/login', (req, res) => {
-  res.json({ message: 'Login endpoint (TODO)' });
-});
-
-router.post('/logout', (req, res) => {
-  res.json({ message: 'Logout endpoint (TODO)' });
-});
+router.post('/signup', signup);
+router.post('/login', login);
+router.post('/logout', logout);
 
 module.exports = router;
