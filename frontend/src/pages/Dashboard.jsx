@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [playlistDetail, setPlaylistDetail] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadForm, setUploadForm] = useState({ title: '', artist: '', file: null });
 
@@ -62,8 +63,33 @@ export default function Dashboard() {
     try {
       await api.addSongToPlaylist(token, selectedPlaylist, songId);
       alert('Song added to playlist!');
+      if (playlistDetail?.playlist.id === selectedPlaylist) {
+        const details = await api.getPlaylistDetails(selectedPlaylist);
+        setPlaylistDetail(details);
+      }
     } catch (err) {
       alert('Failed to add song');
+    }
+  };
+
+  const handleViewPlaylist = async (playlistId) => {
+    try {
+      const details = await api.getPlaylistDetails(playlistId);
+      setPlaylistDetail(details);
+    } catch (err) {
+      console.error('Failed to load playlist', err);
+    }
+  };
+
+  const handleRemoveSongFromPlaylist = async (songId) => {
+    if (!playlistDetail) return;
+    try {
+      await api.removeSongFromPlaylist(token, playlistDetail.playlist.id, songId);
+      const details = await api.getPlaylistDetails(playlistDetail.playlist.id);
+      setPlaylistDetail(details);
+      alert('Song removed!');
+    } catch (err) {
+      alert('Failed to remove song');
     }
   };
 
@@ -97,7 +123,10 @@ export default function Dashboard() {
               <div
                 key={p.id}
                 className={`playlist-card ${selectedPlaylist === p.id ? 'selected' : ''}`}
-                onClick={() => setSelectedPlaylist(p.id)}
+                onClick={() => {
+                  setSelectedPlaylist(p.id);
+                  handleViewPlaylist(p.id);
+                }}
               >
                 <div className="playlist-icon">📁</div>
                 <h3>{p.name}</h3>
@@ -132,6 +161,39 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
+
+      {playlistDetail && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>{playlistDetail.playlist.name}</h2>
+            <div className="playlist-songs">
+              {playlistDetail.songs.length === 0 ? (
+                <p>No songs in this playlist</p>
+              ) : (
+                playlistDetail.songs.map(song => (
+                  <div key={song.id} className="song-item">
+                    <div className="song-info">
+                      <h3>{song.title}</h3>
+                      <p>{song.artist}</p>
+                    </div>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => handleRemoveSongFromPlaylist(song.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="modal-buttons">
+              <button type="button" className="btn-secondary" onClick={() => setPlaylistDetail(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showUploadModal && (
         <div className="modal">

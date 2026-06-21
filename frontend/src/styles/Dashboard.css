@@ -217,3 +217,15 @@
 .modal-buttons button {
   flex: 1;
 }
+
+.playlist-songs {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.playlist-songs p {
+  text-align: center;
+  color: #b3b3b3;
+  padding: 1rem;
+}
