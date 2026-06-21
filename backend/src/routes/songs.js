@@ -1,24 +1,22 @@
 const express = require('express');
+const upload = require('../middleware/upload');
+const { verifyToken } = require('../middleware/auth');
+const {
+  uploadSong,
+  getAllSongsHandler,
+  searchSongsHandler,
+  getSongByIdHandler,
+  streamSong,
+  getUserSongs,
+} = require('../controllers/songController');
+
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  res.json({ message: 'Get all songs (TODO)' });
-});
-
-router.post('/upload', (req, res) => {
-  res.json({ message: 'Upload song (TODO)' });
-});
-
-router.get('/search', (req, res) => {
-  res.json({ message: 'Search songs (TODO)' });
-});
-
-router.get('/:id', (req, res) => {
-  res.json({ message: 'Get song details (TODO)' });
-});
-
-router.get('/:id/stream', (req, res) => {
-  res.json({ message: 'Stream audio (TODO)' });
-});
+router.get('/', getAllSongsHandler);
+router.get('/search', searchSongsHandler);
+router.post('/upload', verifyToken, upload.single('file'), uploadSong);
+router.get('/user/my-songs', verifyToken, getUserSongs);
+router.get('/:id', getSongByIdHandler);
+router.get('/:id/stream', streamSong);
 
 module.exports = router;
