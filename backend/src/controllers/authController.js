@@ -1,9 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { createUser, getUserByEmail, getUserByUsername } = require('../models/userModel');
-
-// Track failed login attempts in memory
-const failedLoginAttempts = {};
+const { addFailedAttempt, clearFailedAttempts } = require('../middleware/loginTracker');
 
 const signup = async (req, res) => {
   try {
@@ -45,26 +43,23 @@ const login = async (req, res) => {
     const clientKey = req.ip;
 
     if (!email || !password) {
-      if (!failedLoginAttempts[clientKey]) failedLoginAttempts[clientKey] = [];
-      failedLoginAttempts[clientKey].push(Date.now());
+      addFailedAttempt(clientKey);
       return res.status(400).json({ error: 'Email and password required' });
     }
 
     const user = await getUserByEmail(email);
     if (!user) {
-      if (!failedLoginAttempts[clientKey]) failedLoginAttempts[clientKey] = [];
-      failedLoginAttempts[clientKey].push(Date.now());
+      addFailedAttempt(clientKey);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) {
-      if (!failedLoginAttempts[clientKey]) failedLoginAttempts[clientKey] = [];
-      failedLoginAttempts[clientKey].push(Date.now());
+      addFailedAttempt(clientKey);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    failedLoginAttempts[clientKey] = [];
+    clearFailedAttempts(clientKey);
 
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 

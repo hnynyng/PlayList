@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const { getFailedAttempts } = require('./loginTracker');
 
 // General API limiter - 100 requests per 15 minutes
 const apiLimiter = rateLimit({
@@ -9,30 +10,16 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Auth limiter - tracks failed login attempts in memory
-const failedLoginAttempts = {};
-
+// Auth limiter - uses shared login tracker
 const authLimiter = (req, res, next) => {
   const clientKey = req.ip;
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-
-  if (!failedLoginAttempts[clientKey]) {
-    failedLoginAttempts[clientKey] = [];
-  }
-
-  // Remove attempts older than 15 minutes
-  failedLoginAttempts[clientKey] = failedLoginAttempts[clientKey].filter(
-    timestamp => now - timestamp < windowMs
-  );
+  const attempts = getFailedAttempts(clientKey);
 
   // Check if rate limited (max 5 failed attempts)
-  if (failedLoginAttempts[clientKey].length >= 5) {
+  if (attempts.length >= 5) {
     return res.status(429).json({ error: 'Too many login attempts, please try again later' });
   }
 
-  // Store the attempt timestamp for later (controller will increment on failure)
-  res.locals.loginAttemptKey = clientKey;
   next();
 };
 
