@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../AuthContext';
 import api from '../api';
+import MusicPlayer from '../components/MusicPlayer';
 import '../styles/Dashboard.css';
 
 export default function Dashboard() {
@@ -12,6 +13,7 @@ export default function Dashboard() {
   const [playlistDetail, setPlaylistDetail] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadForm, setUploadForm] = useState({ title: '', artist: '', file: null });
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -104,6 +106,14 @@ export default function Dashboard() {
           <button onClick={logout} className="logout-btn">Logout</button>
         </div>
       </header>
+
+      {songs.length > 0 && (
+        <MusicPlayer
+          songs={songs}
+          currentSongIndex={currentSongIndex}
+          onSongChange={setCurrentSongIndex}
+        />
+      )}
 
       <div className="dashboard-content">
         <section className="section">
