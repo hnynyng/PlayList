@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifyToken } = require('../middleware/auth');
+const { validatePlaylistCreate } = require('../middleware/validation');
 const {
   createPlaylistHandler,
   getUserPlaylistsHandler,
@@ -12,7 +13,7 @@ const {
 const router = express.Router();
 
 router.get('/', verifyToken, getUserPlaylistsHandler);
-router.post('/', verifyToken, createPlaylistHandler);
+router.post('/', verifyToken, validatePlaylistCreate, createPlaylistHandler);
 router.get('/:id', getPlaylistByIdHandler);
 router.post('/:id/songs', verifyToken, addSongHandler);
 router.delete('/:id/songs/:song_id', verifyToken, removeSongHandler);

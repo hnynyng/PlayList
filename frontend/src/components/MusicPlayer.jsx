@@ -14,13 +14,18 @@ export default function MusicPlayer({ songs, currentSongIndex, onSongChange }) {
     if (!currentSong || !audioRef.current) return;
 
     const audio = audioRef.current;
-    audio.src = `http://localhost:5000${currentSong.file_path}`;
-    audio.volume = volume;
+    audio.src = `http://localhost:5000/songs/${currentSong.id}/stream`;
 
     if (isPlaying) {
       audio.play().catch(err => console.error('Play error:', err));
     }
-  }, [currentSong, volume]);
+  }, [currentSong]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   useEffect(() => {
     const audio = audioRef.current;
