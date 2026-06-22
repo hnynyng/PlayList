@@ -9,15 +9,32 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Auth limiter - 5 login attempts per 15 minutes per IP
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: 'Too many login attempts, please try again later',
-  skipSuccessfulRequests: true,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Auth limiter - tracks failed login attempts in memory
+const failedLoginAttempts = {};
+
+const authLimiter = (req, res, next) => {
+  const clientKey = req.ip;
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000; // 15 minutes
+
+  if (!failedLoginAttempts[clientKey]) {
+    failedLoginAttempts[clientKey] = [];
+  }
+
+  // Remove attempts older than 15 minutes
+  failedLoginAttempts[clientKey] = failedLoginAttempts[clientKey].filter(
+    timestamp => now - timestamp < windowMs
+  );
+
+  // Check if rate limited (max 5 failed attempts)
+  if (failedLoginAttempts[clientKey].length >= 5) {
+    return res.status(429).json({ error: 'Too many login attempts, please try again later' });
+  }
+
+  // Store the attempt timestamp for later (controller will increment on failure)
+  res.locals.loginAttemptKey = clientKey;
+  next();
+};
 
 // Upload limiter - 10 uploads per hour per user
 const uploadLimiter = rateLimit({
