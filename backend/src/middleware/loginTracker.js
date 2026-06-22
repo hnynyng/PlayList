@@ -14,9 +14,9 @@ const getFailedAttempts = (clientKey) => {
   }
 
   const now = Date.now();
-  const windowMs = 15 * 60 * 1000;
+  const windowMs = 15 * 60 * 1000; // 15 minutes
 
-  // Remove attempts older than 15 minutes
+  // Remove attempts older than window
   failedLoginAttempts[clientKey] = failedLoginAttempts[clientKey].filter(
     timestamp => now - timestamp < windowMs
   );

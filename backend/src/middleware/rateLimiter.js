@@ -23,12 +23,11 @@ const authLimiter = (req, res, next) => {
   next();
 };
 
-// Upload limiter - 10 uploads per hour per user
+// Upload limiter - 10 uploads per hour (per IP/user combination)
 const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
   message: 'Upload limit exceeded, max 10 uploads per hour',
-  keyGenerator: (req) => req.userId || req.ip,
   skip: (req) => !req.userId,
   standardHeaders: true,
   legacyHeaders: false,
