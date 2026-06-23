@@ -11,6 +11,7 @@ const MP3_SIGNATURES = [
 
 const validateMp3File = async (filePath) => {
   return new Promise((resolve, reject) => {
+    // Read only first 10 bytes - sufficient for all MP3 signatures (max 3 bytes)
     const stream = fs.createReadStream(filePath, { end: 10 });
     const chunks = [];
 
@@ -35,15 +36,23 @@ const fileValidationMiddleware = async (req, res, next) => {
     const isValidMp3 = await validateMp3File(req.file.path);
 
     if (!isValidMp3) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkErr) {
+        console.error('Failed to delete invalid file:', unlinkErr);
+      }
       return res.status(400).json({ error: 'File is not a valid MP3' });
     }
 
     next();
   } catch (err) {
-    console.error('File validation error:', err);
+    console.error('File validation error:', err.message);
     if (req.file) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkErr) {
+        console.error('Failed to delete file after validation error:', unlinkErr);
+      }
     }
     res.status(500).json({ error: 'File validation failed' });
   }

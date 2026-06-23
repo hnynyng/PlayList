@@ -11,7 +11,11 @@ const uploadSong = async (req, res) => {
     const { title, artist, duration } = req.body;
 
     if (!title || !artist || !duration) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkErr) {
+        console.error('Failed to delete file:', unlinkErr);
+      }
       return res.status(400).json({ error: 'Title, artist, and duration required' });
     }
 
@@ -24,7 +28,11 @@ const uploadSong = async (req, res) => {
     });
   } catch (error) {
     if (req.file) {
-      fs.unlinkSync(req.file.path);
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkErr) {
+        console.error('Failed to delete file after error:', unlinkErr);
+      }
     }
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Internal server error' });
