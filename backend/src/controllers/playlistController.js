@@ -99,7 +99,7 @@ const addSongHandler = async (req, res) => {
 
 const removeSongHandler = async (req, res) => {
   try {
-    const { id, songId } = req.params;
+    const { id, song_id } = req.params;
 
     const playlist = await getPlaylistById(id);
     if (!playlist) {
@@ -110,7 +110,7 @@ const removeSongHandler = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    await removeSongFromPlaylist(id, songId);
+    await removeSongFromPlaylist(id, song_id);
 
     res.json({ message: 'Song removed from playlist' });
   } catch (error) {

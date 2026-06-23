@@ -1,15 +1,6 @@
 const rateLimit = require('express-rate-limit');
 const { getFailedAttempts } = require('./loginTracker');
 
-// General API limiter - 100 requests per 15 minutes
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: 'Too many requests, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Auth limiter - uses shared login tracker
 const authLimiter = (req, res, next) => {
   const clientKey = req.ip;
@@ -34,7 +25,6 @@ const uploadLimiter = rateLimit({
 });
 
 module.exports = {
-  apiLimiter,
   authLimiter,
   uploadLimiter,
 };

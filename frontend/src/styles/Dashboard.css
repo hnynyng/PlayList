@@ -164,6 +164,11 @@
   font-size: 0.9rem;
 }
 
+.song-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -228,4 +233,46 @@
   text-align: center;
   color: #b3b3b3;
   padding: 1rem;
+}
+
+.player-container {
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: 1px solid #1db954;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.back-button:hover {
+  background: #1db954;
+  color: #000;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  background: #282828;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  transition: border 0.3s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #1db954;
 }

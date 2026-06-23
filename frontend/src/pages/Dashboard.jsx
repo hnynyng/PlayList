@@ -9,11 +9,14 @@ export default function Dashboard() {
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [playlistDetail, setPlaylistDetail] = useState(null);
+  const [viewingPlaylistId, setViewingPlaylistId] = useState(null);
+  const [viewingPlaylistName, setViewingPlaylistName] = useState(null);
+  const [viewingPlaylistSongs, setViewingPlaylistSongs] = useState([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadForm, setUploadForm] = useState({ title: '', artist: '', file: null });
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -26,6 +29,8 @@ export default function Dashboard() {
       const playlistsData = await api.getUserPlaylists(token);
       setSongs(songsData.songs || []);
       setPlaylists(playlistsData.playlists || []);
+      setViewingPlaylistId(null);
+      setCurrentSongIndex(0);
     } catch (err) {
       console.error('Failed to fetch data', err);
     } finally {
@@ -57,43 +62,58 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddToPlaylist = async (songId) => {
-    if (!selectedPlaylist) {
-      alert('Select a playlist first');
-      return;
-    }
-    try {
-      await api.addSongToPlaylist(token, selectedPlaylist, songId);
-      alert('Song added to playlist!');
-      if (playlistDetail?.playlist.id === selectedPlaylist) {
-        const details = await api.getPlaylistDetails(selectedPlaylist);
-        setPlaylistDetail(details);
-      }
-    } catch (err) {
-      alert('Failed to add song');
-    }
-  };
-
-  const handleViewPlaylist = async (playlistId) => {
+  const handlePlaylistClick = async (playlistId, playlistName) => {
     try {
       const details = await api.getPlaylistDetails(playlistId);
-      setPlaylistDetail(details);
+      setViewingPlaylistId(playlistId);
+      setViewingPlaylistName(playlistName);
+      setViewingPlaylistSongs(details.songs || []);
+      setCurrentSongIndex(0);
+      setSearchQuery('');
+      setSearchResults(null);
     } catch (err) {
       console.error('Failed to load playlist', err);
     }
   };
 
-  const handleRemoveSongFromPlaylist = async (songId) => {
-    if (!playlistDetail) return;
+  const handleBackToAllSongs = () => {
+    setViewingPlaylistId(null);
+    setViewingPlaylistName(null);
+    setViewingPlaylistSongs([]);
+    setCurrentSongIndex(0);
+    setSearchQuery('');
+    setSearchResults(null);
+  };
+
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
     try {
-      await api.removeSongFromPlaylist(token, playlistDetail.playlist.id, songId);
-      const details = await api.getPlaylistDetails(playlistDetail.playlist.id);
-      setPlaylistDetail(details);
+      const results = await api.searchSongs(query);
+      setSearchResults(results.songs || []);
+    } catch (err) {
+      console.error('Search failed:', err);
+      setSearchResults([]);
+    }
+  };
+
+  const handleRemoveSongFromPlaylist = async (songId) => {
+    if (!viewingPlaylistId) return;
+    try {
+      await api.removeSongFromPlaylist(token, viewingPlaylistId, songId);
+      const details = await api.getPlaylistDetails(viewingPlaylistId);
+      setViewingPlaylistSongs(details.songs || []);
       alert('Song removed!');
     } catch (err) {
       alert('Failed to remove song');
     }
   };
+
+  const currentSongs = viewingPlaylistId ? viewingPlaylistSongs : songs;
+  const currentTitle = viewingPlaylistId ? viewingPlaylistName : `All Songs (${songs.length})`;
 
   if (loading) return <div className="dashboard"><p>Loading...</p></div>;
 
@@ -107,13 +127,20 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {songs.length > 0 && (
-        <MusicPlayer
-          songs={songs}
-          currentSongIndex={currentSongIndex}
-          onSongChange={setCurrentSongIndex}
-        />
-      )}
+      <div className="player-container">
+        {viewingPlaylistId && (
+          <button className="back-button" onClick={handleBackToAllSongs}>
+            ← {viewingPlaylistName}
+          </button>
+        )}
+        {currentSongs.length > 0 && (
+          <MusicPlayer
+            songs={currentSongs}
+            currentSongIndex={currentSongIndex}
+            onSongChange={setCurrentSongIndex}
+          />
+        )}
+      </div>
 
       <div className="dashboard-content">
         <section className="section">
@@ -132,11 +159,8 @@ export default function Dashboard() {
             {playlists.map(p => (
               <div
                 key={p.id}
-                className={`playlist-card ${selectedPlaylist === p.id ? 'selected' : ''}`}
-                onClick={() => {
-                  setSelectedPlaylist(p.id);
-                  handleViewPlaylist(p.id);
-                }}
+                className={`playlist-card ${viewingPlaylistId === p.id ? 'selected' : ''}`}
+                onClick={() => handlePlaylistClick(p.id, p.name)}
               >
                 <div className="playlist-icon">📁</div>
                 <h3>{p.name}</h3>
@@ -147,63 +171,61 @@ export default function Dashboard() {
 
         <section className="section">
           <div className="section-header">
-            <h2>All Songs ({songs.length})</h2>
-            <button className="btn-primary" onClick={() => setShowUploadModal(true)}>
-              + Upload Song
-            </button>
+            <h2>{currentTitle}</h2>
+            {!viewingPlaylistId && (
+              <button className="btn-primary" onClick={() => setShowUploadModal(true)}>
+                + Upload Song
+              </button>
+            )}
           </div>
+          {!viewingPlaylistId && (
+            <input
+              type="text"
+              placeholder="🔍 Search by title or artist..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="search-input"
+            />
+          )}
           <div className="songs-list">
-            {songs.map(song => (
-              <div key={song.id} className="song-item">
-                <div className="song-info">
-                  <h3>{song.title}</h3>
-                  <p>{song.artist}</p>
+            {(searchResults !== null ? searchResults : currentSongs).length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#b3b3b3' }}>
+                {searchQuery ? 'No songs found' : 'No songs here'}
+              </p>
+            ) : (
+              (searchResults !== null ? searchResults : currentSongs).map(song => (
+                <div key={song.id} className="song-item">
+                  <div className="song-info">
+                    <h3>{song.title}</h3>
+                    <p>{song.artist}</p>
+                  </div>
+                  <div className="song-actions">
+                    <button
+                      className="btn-primary"
+                      onClick={() => {
+                        const index = currentSongs.findIndex(s => s.id === song.id);
+                        if (index !== -1) {
+                          setCurrentSongIndex(index);
+                        }
+                      }}
+                    >
+                      ▶ Play
+                    </button>
+                    {viewingPlaylistId && (
+                      <button
+                        className="btn-secondary"
+                        onClick={() => handleRemoveSongFromPlaylist(song.id)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button
-                  className="btn-secondary"
-                  onClick={() => handleAddToPlaylist(song.id)}
-                  disabled={!selectedPlaylist}
-                >
-                  Add to Playlist
-                </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </div>
-
-      {playlistDetail && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>{playlistDetail.playlist.name}</h2>
-            <div className="playlist-songs">
-              {playlistDetail.songs.length === 0 ? (
-                <p>No songs in this playlist</p>
-              ) : (
-                playlistDetail.songs.map(song => (
-                  <div key={song.id} className="song-item">
-                    <div className="song-info">
-                      <h3>{song.title}</h3>
-                      <p>{song.artist}</p>
-                    </div>
-                    <button
-                      className="btn-secondary"
-                      onClick={() => handleRemoveSongFromPlaylist(song.id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="modal-buttons">
-              <button type="button" className="btn-secondary" onClick={() => setPlaylistDetail(null)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showUploadModal && (
         <div className="modal">
