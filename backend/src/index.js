@@ -2,9 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const { authLimiter, uploadLimiter } = require('./middleware/rateLimiter');
 const { fileValidationMiddleware } = require('./middleware/fileValidation');
 const runMigrations = require('./config/migrate');
+
+fs.mkdirSync('uploads', { recursive: true });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
