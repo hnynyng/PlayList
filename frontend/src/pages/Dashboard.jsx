@@ -17,6 +17,8 @@ export default function Dashboard() {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
+  const [addToPlaylistSongId, setAddToPlaylistSongId] = useState(null);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -99,6 +101,17 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Search failed:', err);
       setSearchResults([]);
+    }
+  };
+
+  const handleAddToPlaylist = async (songId) => {
+    if (!selectedPlaylistId) return;
+    const result = await api.addSongToPlaylist(token, selectedPlaylistId, songId);
+    if (result.error) {
+      alert(result.error);
+    } else {
+      setAddToPlaylistSongId(null);
+      setSelectedPlaylistId('');
     }
   };
 
@@ -213,13 +226,28 @@ export default function Dashboard() {
                     >
                       ▶ Play
                     </button>
-                    {viewingPlaylistId && (
+                    {viewingPlaylistId ? (
                       <button
                         className="btn-secondary"
                         onClick={() => handleRemoveSongFromPlaylist(song.id)}
                       >
                         Remove
                       </button>
+                    ) : (
+                      addToPlaylistSongId === song.id ? (
+                        <span className="song-actions">
+                          <select value={selectedPlaylistId} onChange={e => setSelectedPlaylistId(e.target.value)}>
+                            <option value="">Pick playlist...</option>
+                            {playlists.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          </select>
+                          <button className="btn-primary" onClick={() => handleAddToPlaylist(song.id)}>Add</button>
+                          <button className="btn-secondary" onClick={() => setAddToPlaylistSongId(null)}>Cancel</button>
+                        </span>
+                      ) : (
+                        <button className="btn-secondary" onClick={() => setAddToPlaylistSongId(song.id)}>
+                          + Playlist
+                        </button>
+                      )
                     )}
                   </div>
                 </div>

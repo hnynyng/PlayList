@@ -14,7 +14,7 @@ export default function MusicPlayer({ songs, currentSongIndex, onSongChange }) {
     if (!currentSong || !audioRef.current) return;
 
     const audio = audioRef.current;
-    audio.src = `http://localhost:5000/songs/${currentSong.id}/stream`;
+    audio.src = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/songs/${currentSong.id}/stream`;
 
     if (isPlaying) {
       audio.play().catch(err => console.error('Play error:', err));
