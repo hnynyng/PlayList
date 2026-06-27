@@ -7,7 +7,8 @@ COPY package*.json ./
 RUN npm install --production
 
 COPY src ./src
-COPY .env.example .env
+
+RUN mkdir -p uploads
 
 EXPOSE 5000
 

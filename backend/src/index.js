@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { authLimiter, uploadLimiter } = require('./middleware/rateLimiter');
 const { fileValidationMiddleware } = require('./middleware/fileValidation');
+const runMigrations = require('./config/migrate');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +34,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+runMigrations()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Migration failed:', err);
+    process.exit(1);
+  });

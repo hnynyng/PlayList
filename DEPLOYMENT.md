@@ -10,56 +10,81 @@ docker-compose up --build
 - Frontend: http://localhost
 - PostgreSQL: localhost:5432
 
+---
+
 ## Deploy to Railway
 
 ### Prerequisites
-- Railway account (railway.app)
-- GitHub connected to Railway
+- Railway account at railway.app
+- GitHub repo pushed (already done)
 
-### Steps
+### Step 1: Create Railway project
 
-1. **Push to GitHub** (already done)
+1. Go to [railway.app](https://railway.app) → **New Project**
+2. Choose **Deploy from GitHub repo** → select `PlayList`
 
-2. **Create Railway project**
-   - Go to railway.app
-   - New Project → GitHub Repo
-   - Select PlayList repo
+### Step 2: Add PostgreSQL
 
-3. **Add services**
-   - PostgreSQL (Railway will auto-create)
-   - Backend (from Dockerfile)
-   - Frontend (from Dockerfile)
+In your Railway project → **+ New** → **Database** → **Add PostgreSQL**
 
-4. **Configure environment variables**
+Railway auto-sets `DATABASE_URL` in the project.
 
-   **Backend:**
-   - `DATABASE_URL`: Railway PostgreSQL connection string
-   - `JWT_SECRET`: Generate random secret
-   - `NODE_ENV`: production
-   - `PORT`: 5000
+### Step 3: Deploy the Backend
 
-   **Frontend:**
-   - `VITE_API_URL`: Your backend Railway URL
+1. In Railway → **+ New** → **GitHub Repo** → select `PlayList`
+2. Set **Root Directory** to `/backend`
+3. Railway detects the Dockerfile automatically
 
-5. **Deploy**
-   - Railway auto-deploys on git push
-   - Check deployment logs
+**Set these environment variables on the backend service:**
 
-## Deploy to AWS EC2 (Later)
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | *(auto-set by Railway PostgreSQL plugin)* |
+| `JWT_SECRET` | *(generate a random string, e.g. `openssl rand -hex 32`)* |
+| `NODE_ENV` | `production` |
 
-Will add EC2 deployment steps in Phase 7.
+Railway assigns `PORT` automatically — leave it unset.
 
-## Monitoring
+4. Click **Deploy** and wait for it to go green
+5. Copy the backend public URL (e.g. `https://playlist-backend-xyz.up.railway.app`)
 
-- Check logs: Railway dashboard
-- Monitor database: Railway PostgreSQL panel
-- Check uptime: ping /health endpoint
+> The backend runs migrations automatically on startup — no manual schema import needed.
 
-## Rollback
+### Step 4: Deploy the Frontend
 
-- Railway keeps previous deployments
-- Click "Redeploy" on previous version
+1. In Railway → **+ New** → **GitHub Repo** → select `PlayList` again
+2. Set **Root Directory** to `/frontend`
+
+**Set these environment variables on the frontend service:**
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | Your backend URL from Step 3 (e.g. `https://playlist-backend-xyz.up.railway.app`) |
+
+> `VITE_API_URL` is passed as a Docker build arg so Vite embeds it at compile time.
+
+3. Click **Deploy** and wait for it to go green
+4. Your app URL is shown in the Railway frontend service dashboard
+
+### Step 5: Done
+
+Open the frontend URL in your browser. The app is live.
 
 ---
 
-**Current Status:** Ready for Railway deployment
+## Known Limitations (Production)
+
+- **No persistent uploads**: MP3 files stored in the container are wiped on redeploy. For real production, move to S3 (Phase 7).
+- **No refresh tokens**: JWT expires after 7 days; users re-login.
+
+---
+
+## Deploy to AWS EC2 (Later)
+
+Will add EC2 + CI/CD steps in Phase 7.
+
+---
+
+## Rollback
+
+Railway keeps previous deployments. Click **Redeploy** on a previous version in the Railway dashboard.
