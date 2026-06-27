@@ -50,7 +50,9 @@ export default function Dashboard() {
       audio.onloadedmetadata = async () => {
         const duration = Math.floor(audio.duration);
         const result = await api.uploadSong(token, uploadForm.file, uploadForm.title, uploadForm.artist, duration);
-        if (!result.error) {
+        if (result.error) {
+          alert(`Upload error: ${result.error}`);
+        } else {
           alert('Song uploaded!');
           setShowUploadModal(false);
           setUploadForm({ title: '', artist: '', file: null });
@@ -58,7 +60,7 @@ export default function Dashboard() {
         }
       };
     } catch (err) {
-      alert('Upload failed');
+      alert(`Upload failed: ${err.message}`);
     }
   };
 
